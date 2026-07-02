@@ -404,17 +404,17 @@ SkitariusOmnissiah.omnissiah = function(self, queried_input, user_value)
         return DO_NOT_PAUSE[queried_input] and user_value or false
     end
 
-    --if desired_action then self.mod:echo("CURRENT: %s | DESIRED: %s", current_action, desired_action) end
+    --if desired_action then self.mod:echo("CURRENT: %s | DESIRED: %s", current_action, desired_action) end -- DEBUG
     local should_iterate = (current_action == desired_action or (desired_action and current_action == desired_action .. "_alt")) or self:should_skip(current_action, desired_action)
 
     if string.find(desired_action or "", "light_until_") then
         local target_index = tonumber(string.sub(desired_action, 13))
         local current_index = self:get_current_light_attack_index()
-        
+
         if current_index ~= target_index then
             self._light_until_wait_for_cycle = false
         end
-        
+
         if current_index == target_index and not self._light_until_wait_for_cycle then
             should_iterate = true
         else
@@ -544,6 +544,7 @@ SkitariusOmnissiah.get_action = function(self)
                 local action_name = action_settings.name
                 self.current_action_raw = action_name
                 self.current_action_time = Managers.time:time("gameplay") - start_time
+                --self.mod:echo(action_name) -- DEBUG
                 self:maybe_update_aim(action_name)
                 self:maybe_update_shooting(start_time, action_name, action_settings)
                 local temp_step_name = self:action_to_step(action_name)
@@ -586,10 +587,13 @@ SkitariusOmnissiah.action_to_step = function(self, action_name)
         else
             return "special_action"
         end
+    elseif string.find(action_name, "pushfollow") or string.find(action_name, "fling") then
+        if string.find(action_name, "light") and string.find(action_name, "combo") then
+            return "light_attack"
+        end
+        return "push_follow_up"
     elseif string.find(action_name, "light") then
         return "light_attack"
-    elseif string.find(action_name, "pushfollow") or string.find(action_name, "fling") then
-        return "push_follow_up"
     elseif string.find(action_name, "push") or string.find(action_name, "find") then
         weapon_manager:set_pushing(true)
         return "push"
