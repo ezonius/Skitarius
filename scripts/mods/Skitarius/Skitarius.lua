@@ -147,6 +147,8 @@ mod.kill_sequence = function(optional_exclusion)
     end
     -- Clear ENGRAM
     engram:kill_engram()
+    mod.omnissiah:reset_light_until()
+
     -- Clear RoF last shot data
     --mod.omnissiah:reset_last_shot()
     mod.weapon_manager:set_firing(false)

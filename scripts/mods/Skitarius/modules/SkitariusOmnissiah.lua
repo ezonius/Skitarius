@@ -338,6 +338,14 @@ local SWAP = {
     COOLDOWN = 0.2
 }
 
+SkitariusOmnissiah.get_current_light_attack_index = function(self)
+    if self.current_action_raw then
+        local index = string.match(self.current_action_raw, "light_(%d+)")
+        return tonumber(index)
+    end
+    return nil
+end
+
 SkitariusOmnissiah.init = function(self, mod)
     self.mod = mod
     self.engram = mod.engram
@@ -347,6 +355,13 @@ SkitariusOmnissiah.init = function(self, mod)
     self.current_action_raw = ""
     self.current_action = ""
     self.current_action_time = 0
+    self._last_engram_index = 0
+    self._light_until_wait_for_cycle = false
+end
+
+SkitariusOmnissiah.reset_light_until = function(self)
+    self._last_engram_index = 0
+    self._light_until_wait_for_cycle = false
 end
 
 SkitariusOmnissiah.set_bind_manager = function(self, bind_manager)
@@ -360,8 +375,20 @@ end
 SkitariusOmnissiah.omnissiah = function(self, queried_input, user_value)
     local is_interrupted = self:maybe_force_interrupt()
 
+    local engram_index = self.engram.INDEX
+    if engram_index ~= self._last_engram_index then
+        self._last_engram_index = engram_index
+        local new_desired = self.engram:current_command()
+        if string.find(new_desired or "", "light_until_") then
+            local target = tonumber(string.sub(new_desired, 13))
+            local current = self:get_current_light_attack_index()
+            self._light_until_wait_for_cycle = (current == target)
+        end
+    end
+
     local current_action = self:get_action()
     self.current_action = current_action
+
     local desired_action = self.engram:current_command()
 
     if is_interrupted and not desired_action then
@@ -378,7 +405,24 @@ SkitariusOmnissiah.omnissiah = function(self, queried_input, user_value)
     end
 
     --if desired_action then self.mod:echo("CURRENT: %s | DESIRED: %s", current_action, desired_action) end
-    if (current_action == desired_action or (desired_action and current_action == desired_action .. "_alt")) or self:should_skip(current_action, desired_action) then
+    local should_iterate = (current_action == desired_action or (desired_action and current_action == desired_action .. "_alt")) or self:should_skip(current_action, desired_action)
+
+    if string.find(desired_action or "", "light_until_") then
+        local target_index = tonumber(string.sub(desired_action, 13))
+        local current_index = self:get_current_light_attack_index()
+        
+        if current_index ~= target_index then
+            self._light_until_wait_for_cycle = false
+        end
+        
+        if current_index == target_index and not self._light_until_wait_for_cycle then
+            should_iterate = true
+        else
+            should_iterate = false
+        end
+    end
+
+    if should_iterate then
         -- Don't iterate if we're in a quick_wield and override_primary is active (prevents early iteration during swap)
         if desired_action ~= "quick_wield" then
             self.engram:iterate_engram()
@@ -487,6 +531,7 @@ SkitariusOmnissiah.get_action = function(self)
     local action_handler = weapon_extension and weapon_extension._action_handler
     local registered_components = action_handler and action_handler._registered_components
     local step_name = weapon_extension and "idle" or nil
+    self.current_action_raw = nil
 
     if registered_components then
         for _, handler_data in pairs(registered_components) do
@@ -720,6 +765,10 @@ SkitariusOmnissiah.maybe_convert_desire = function(self, current_action, desired
         return desired_action
     end
     
+    if string.find(desired_action, "light_until_") then
+        return "light_attack"
+    end
+
     local weapon_manager = self.weapon_manager
     local armoury = self.armoury
     local engram = self.engram
@@ -844,9 +893,22 @@ SkitariusOmnissiah.resolve_conflicts = function(self, input, user, omnissiah, cu
     end
 
     if LAST_DIVINATION.action_one_hold and not engram.TEMP then
-        if engram:current_command() == "light_attack" or engram:next_engram_action() == "light_attack" then
+        local current_command = engram:current_command()
+        if (current_command == "light_attack" or engram:next_engram_action() == "light_attack")
+           and not string.find(current_command or "", "light_until_") then
             if input == "action_one_hold" then
                 outcome = false
+            end
+        end
+    end
+
+    if input == "action_one_hold" and current_action == "light_attack" then
+        local raw_desire = engram:current_command()
+        if raw_desire and string.find(raw_desire, "light_until_") then
+            local target_index = tonumber(string.sub(raw_desire, 13))
+            local current_index = self:get_current_light_attack_index()
+            if current_index and current_index < target_index then
+                return true
             end
         end
     end
