@@ -458,7 +458,7 @@ return {
                             { text = "thrust",          value = "thrust" },
                             { text = "slow_and_steady", value = "slow_and_steady" },
                             { text = "crunch",          value = "crunch" },
-                        }
+                            { text = "mechsword",       value = "mechsword" },}
                     },
                     {
                         setting_id = "heavy_buff_stacks",
@@ -466,7 +466,7 @@ return {
                         default_value = 0,
                         range = { 0, 4 },
                         unit_text = "buff_stacks",
-                    },
+                        tooltip = "heavy_buff_stacks_tooltip",},
                     {
                         setting_id = "heavy_buff_special",
                         tooltip = "heavy_buff_special_tooltip",

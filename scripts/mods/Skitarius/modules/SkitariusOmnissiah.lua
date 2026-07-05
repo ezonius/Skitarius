@@ -29,7 +29,7 @@ local PRAY = {
         special_start_attack  = { weapon_extra_hold = true, action_one_pressed = false, action_one_hold = false, action_two_hold = false },
         special_light_attack  = { weapon_extra_hold = true },
         special_heavy_attack  = { weapon_extra_hold = true },
-        special_heavy_execute = { weapon_extra_hold = true },
+        special_heavy_execute = { weapon_extra_hold = true, action_one_hold = false, action_one_pressed = false },
         special_action        = { weapon_extra_pressed = true, weapon_extra_hold = true, action_one_pressed = false, action_one_hold = false },
     },
     sprint = {
@@ -84,7 +84,7 @@ local PRAY = {
         special_start_attack  = { weapon_extra_hold = true },
         special_light_attack  = { weapon_extra_hold = true },
         special_heavy_attack  = { weapon_extra_hold = true },
-        special_heavy_execute = { weapon_extra_hold = true },
+        special_heavy_execute = { weapon_extra_hold = true, action_one_hold = false, action_one_pressed = false },
         special_action        = { weapon_extra_pressed = true, weapon_extra_hold = true },
     },
     weapon_reload = {
@@ -104,7 +104,7 @@ local PRAY = {
         special_start_attack  = { weapon_extra_hold = true },
         special_light_attack  = { weapon_extra_hold = true },
         special_heavy_attack  = { weapon_extra_hold = true },
-        special_heavy_execute = { weapon_extra_hold = true },
+        special_heavy_execute = { weapon_extra_hold = true, action_one_hold = false, action_one_pressed = false },
         special_action        = { weapon_extra_pressed = true },
     },
     quick_wield = {
@@ -124,7 +124,7 @@ local PRAY = {
         special_start_attack  = { weapon_extra_hold = true },
         special_light_attack  = { weapon_extra_hold = true },
         special_heavy_attack  = { weapon_extra_hold = true },
-        special_heavy_execute = { weapon_extra_hold = true },
+        special_heavy_execute = { weapon_extra_hold = true, action_one_hold = false, action_one_pressed = false },
         special_action        = { weapon_extra_pressed = true },
     },
     -- MELEE
@@ -140,7 +140,8 @@ local PRAY = {
         special_action       = { weapon_extra_pressed = true, action_one_hold = false },
         quick_wield          = { quick_wield = true },
         weapon_reload        = { weapon_reload_hold = true },
-        shoot                = { action_one_hold = false }
+        shoot                = { action_one_hold = false },
+        special_heavy_execute = { weapon_extra_hold = true, action_one_hold = false, action_one_pressed = false },
     },
     light_attack = {
         idle           = { action_one_hold = false },
@@ -153,6 +154,7 @@ local PRAY = {
         special_action = { weapon_extra_pressed = true, action_one_hold = false },
         quick_wield    = { quick_wield = true },
         weapon_reload  = { weapon_reload_hold = true },
+        special_heavy_execute = { weapon_extra_hold = true, action_one_hold = false, action_one_pressed = false },
     },
     heavy_attack = {
         idle           = { action_one_hold = false },
@@ -165,6 +167,7 @@ local PRAY = {
         special_action = { weapon_extra_pressed = true, action_one_hold = false },
         quick_wield    = { quick_wield = true },
         weapon_reload  = { weapon_reload_hold = true },
+        special_heavy_execute = { weapon_extra_hold = true, action_one_hold = false, action_one_pressed = false },
     },
     push = {
         idle           = { action_one_hold = false },
@@ -177,6 +180,7 @@ local PRAY = {
         special_action = { weapon_extra_pressed = true },
         quick_wield    = { quick_wield = true },
         weapon_reload  = { weapon_reload_hold = true },
+        special_heavy_execute = { weapon_extra_hold = true, action_one_hold = false, action_one_pressed = false },
     },
     push_follow_up = {
         idle           = { action_one_hold = false },
@@ -189,6 +193,7 @@ local PRAY = {
         special_action = { weapon_extra_pressed = true, action_one_hold = false },
         quick_wield    = { quick_wield = true },
         weapon_reload  = { weapon_reload_hold = true },
+        special_heavy_execute = { weapon_extra_hold = true, action_one_hold = false, action_one_pressed = false },
     },
     block = {
         idle           = { action_two_hold = false, action_one_hold = false },
@@ -201,6 +206,7 @@ local PRAY = {
         special_action = { weapon_extra_pressed = true, action_one_hold = false },
         quick_wield    = { quick_wield = true },
         weapon_reload  = { weapon_reload_hold = true },
+        special_heavy_execute = { weapon_extra_hold = true, action_one_hold = false, action_one_pressed = false },
     },
     -- RANGED
     shoot = {
@@ -417,12 +423,9 @@ SkitariusOmnissiah.omnissiah = function(self, queried_input, user_value)
             self._light_until_wait_for_cycle = (current == target)
         end
     end
-
-    local current_action = self:get_action()
+    local current_action = self:get_action(self.engram:current_command())
     self.current_action = current_action
-
     local desired_action = self.engram:current_command()
-
     if is_interrupted and not desired_action then
         if self.bind_manager:override_primary() and self.engram:valid_engram("override_primary") and not self.weapon_manager:is_blocking() then
             if queried_input == "action_one_pressed" or queried_input == "action_one_hold" then
@@ -436,7 +439,6 @@ SkitariusOmnissiah.omnissiah = function(self, queried_input, user_value)
         return DO_NOT_PAUSE[queried_input] and user_value or false
     end
 
-    --if desired_action then self.mod:echo("CURRENT: %s | DESIRED: %s", current_action, desired_action) end -- DEBUG
     local should_iterate = (current_action == desired_action or (desired_action and current_action == desired_action .. "_alt")) or self:should_skip(current_action, desired_action)
 
     if string.find(desired_action or "", "light_until_") then
@@ -455,16 +457,15 @@ SkitariusOmnissiah.omnissiah = function(self, queried_input, user_value)
     end
 
     if should_iterate then
-        -- Don't iterate if we're in a quick_wield and override_primary is active (prevents early iteration during swap)
         if desired_action ~= "quick_wield" then
             self.engram:iterate_engram()
-            current_action = self:get_action()
+            current_action = self:get_action(self.engram:current_command())
             desired_action = self.engram:current_command()
         end
     end
 
     desired_action = self:maybe_convert_desire(current_action, desired_action)
-    
+
     if not current_action or not PRAY[current_action] or not PRAY[current_action][desired_action] then
         if self.bind_manager:override_primary() and self.engram:valid_engram("override_primary") and not self.weapon_manager:is_blocking() then
             if queried_input == "action_one_pressed" or queried_input == "action_one_hold" then
@@ -488,11 +489,10 @@ SkitariusOmnissiah.omnissiah = function(self, queried_input, user_value)
     end
 
     divine_outcome = self:resolve_conflicts(queried_input, user_value, divine_outcome, current_action, desired_action)
-    
+
     if queried_input == "move_forward" or queried_input == "move_backward" then
         divine_outcome = divine_outcome or user_value or 0
     end
-
     LAST_DIVINATION[queried_input] = divine_outcome
 
     return divine_outcome
@@ -503,8 +503,7 @@ end
 --//////////////////////////////////////////////////////////////////////////////--
 
 SkitariusOmnissiah.maybe_force_interrupt = function(self)
-    local engram = self.engram
-    local current_command = engram:current_command()
+    local current_command = self.engram:current_command()
     local input_table = self.bind_manager:get_input_table()
 
     if not current_command then
@@ -512,16 +511,16 @@ SkitariusOmnissiah.maybe_force_interrupt = function(self)
     end
 
     -- Never interrupt temp engrams or engrams designed to themselves be interruptions, and don't do anything if no binds are active
-    if engram.BIND == "TEMP" or engram.BIND == "INTERRUPT" or string.find(current_command, "wield") or not self.bind_manager:any_binds() then
+    if self.engram.BIND == "TEMP" or self.engram.BIND == "INTERRUPT" or string.find(current_command, "wield") or not self.bind_manager:any_binds() then
         return false
     end
 
     -- "Halt on Interrupt" interruptions
     local kill_interruption = self.weapon_manager:interruption()
     if kill_interruption then
-        local bind = engram and engram.BIND
+        local bind = self.engram and self.engram.BIND
         if not bind then return false end
-        if bind and string.find(bind, "held") then engram:reset_engram() -- Reset held bind sequences, but do not release the bind
+        if bind and string.find(bind, "held") then self.engram:reset_engram() -- Reset held bind sequences, but do not release the bind
         else self.mod:kill_sequence() end -- Reset toggled bind sequence and release the bind
         return true
     end
@@ -530,24 +529,24 @@ SkitariusOmnissiah.maybe_force_interrupt = function(self)
         if data.value then
             local interruption = INTERRUPTING_ACTIONS[input]
 
-            if interruption and not current_command ~= interruption and engram.TYPE ~= interruption then
+            if interruption and not current_command ~= interruption and self.engram.TYPE ~= interruption then
                 if self.weapon_manager:in_cooldown() and interruption == "special_action" then
                     return false
                 end
 
-                engram:build_temp_engram(interruption, "INTERRUPT")
+                self.engram:build_temp_engram(interruption, "INTERRUPT")
                 return false
             end
         end
     end
 
-    if engram:get_setting("FORCE_HEAVY_WHEN_SPECIAL") and self.weapon_manager:special_active() then
-        engram:build_temp_engram("heavy_attack", "FORCE_HEAVY")
+    if self.engram:get_setting("FORCE_HEAVY_WHEN_SPECIAL") and self.weapon_manager:special_active() then
+        self.engram:build_temp_engram("heavy_attack", "FORCE_HEAVY")
         return false
     end
 
-    if engram:get_setting("HOLD_HEAVY_WHEN_SPRINTING") and (self.weapon_manager:is_sprinting() or self.weapon_manager:is_sliding()) then
-        engram:build_temp_engram("sprint_heavy_attack", "HOLD_HEAVY")
+    if self.engram:get_setting("HOLD_HEAVY_WHEN_SPRINTING") and (self.weapon_manager:is_sprinting() or self.weapon_manager:is_sliding()) then
+        self.engram:build_temp_engram("sprint_heavy_attack", "HOLD_HEAVY")
         return false
     end
 
@@ -557,7 +556,7 @@ end
 -- STAGE 1: COLLECT INITIAL RUNNING ACTION NAME --
 -- /////////////////////////////////////////////--
 
-SkitariusOmnissiah.get_action = function(self)
+SkitariusOmnissiah.get_action = function(self, desired_action)
     local player = Managers.player:local_player_safe(1)
 
     if not player then
@@ -570,7 +569,6 @@ SkitariusOmnissiah.get_action = function(self)
     local registered_components = action_handler and action_handler._registered_components
     local step_name = weapon_extension and "idle" or nil
     self.current_action_raw = nil
-
     if registered_components then
         for _, handler_data in pairs(registered_components) do
             local running_action = handler_data.running_action
@@ -596,6 +594,14 @@ SkitariusOmnissiah.get_action = function(self)
     end
 
     if step_name == "sprint" then
+        return "sprint"
+    end
+
+    if self.engram:current_command() == "sprint" and step_name == "idle" then
+        return "sprint"
+    end
+
+    if self.engram:current_command() == "idle" and (step_name == "sprint" or self.weapon_manager:is_sprinting()) then
         return "sprint"
     end
 
@@ -649,7 +655,7 @@ SkitariusOmnissiah.action_to_step = function(self, action_name)
     elseif string.find(action_name, "heavy") or string.find(action_name, "special_2") then
         if weapon_type == "MELEE" then
             if string.find(action_name, "combo") then
-                if engram:current_command() == "light_attack" or engram:next_engram_action() == "light_attack" then
+                if self.engram:current_command() == "light_attack" or self.engram:next_engram_action() == "light_attack" then
                     return "light_attack"
                 else
                     return "heavy_attack"
@@ -707,7 +713,7 @@ SkitariusOmnissiah.maybe_convert_action = function(self, player_unit, running_ac
         if (weapon_manager:weapon_type() == "RANGED" or HEAVY_SPECIAL[weapon_name]) and
            ( mechanicus_strings[original_name] or (string.find(original_name, "stab") or string.find(original_name, "bash"))) then
             if weapon_manager:is_charged_melee(running_action, handler_data.component, action_settings) then
-                if engram:current_command() == "special_heavy_execute" then
+                if self.engram:current_command() == "special_heavy_execute" or self.engram:current_command() == "special_start_attack" then
                     if weapon_manager:in_cooldown() then
                         return "heavy_attack"
                     end
@@ -716,7 +722,7 @@ SkitariusOmnissiah.maybe_convert_action = function(self, player_unit, running_ac
                     return "special_heavy_attack"
                 end
             else
-                if engram:current_command() == "special_action" then
+                if self.engram:current_command() == "special_action" then
                     if weapon_manager:in_cooldown() then
                         return "start_attack"
                     end
@@ -729,7 +735,7 @@ SkitariusOmnissiah.maybe_convert_action = function(self, player_unit, running_ac
         if string.find(original_name, "shoot") then
             action_name = "charge"
         elseif weapon_manager:is_charged_melee(running_action, handler_data.component, action_settings) then
-            if engram:current_command() == "sprint_heavy_attack" and weapon_manager:is_stable_sprinting() then
+            if self.engram:current_command() == "sprint_heavy_attack" and weapon_manager:is_stable_sprinting() then
                 return "sprint_heavy_attack"
             end
             return "heavy_attack"
@@ -744,7 +750,7 @@ SkitariusOmnissiah.maybe_convert_action = function(self, player_unit, running_ac
             action_name = action_name .. "_alt"
         end
     end
-    
+
     if action_settings.kind == "sweep" then
         if self.sweep == "after_damage_window" then
             return "idle"
@@ -754,8 +760,7 @@ SkitariusOmnissiah.maybe_convert_action = function(self, player_unit, running_ac
             end
         end
     end
-
-    if action_name == "heavy_attack" and engram:current_command() == "sprint_heavy_attack" then
+    if action_name == "heavy_attack" and self.engram:current_command() == "sprint_heavy_attack" then
         return "sprint_heavy_attack"
     end
 
@@ -784,6 +789,14 @@ SkitariusOmnissiah.maybe_convert_action = function(self, player_unit, running_ac
         return action_name .. "_starting"
     end
 
+    if step_name == "idle" and self.engram:current_command() == "sprint" then
+        if self.current_action_time < 0.1 then
+            return "sprint"
+        end
+    elseif self.engram:current_command() == "idle" and self.weapon_manager:is_sprinting() then
+        return "sprint"
+    end
+
     if action_name == "special_action" then
         if original_name == "action_melee_start_special" then
             if weapon_manager:is_charged_melee(running_action, handler_data.component, action_settings) then
@@ -805,15 +818,15 @@ SkitariusOmnissiah.maybe_convert_action = function(self, player_unit, running_ac
         end
     end
 
-    if action_name == "weapon_reload" and engram.TEMP then
-        if engram:current_command() == "special_action" or engram:next_engram_action() == "special_action" then
+    if action_name == "weapon_reload" and self.engram.TEMP then
+        if self.engram:current_command() == "special_action" or self.engram:next_engram_action() == "special_action" then
             return "special_action"
         else
             return action_name
         end
     end
 
-    if action_name == "push" and engram:current_command() ~= "push_follow_up" then
+    if action_name == "push" and self.engram:current_command() ~= "push_follow_up" then
         if current_action_t > 0.1 then
             return "idle"
         end
@@ -830,11 +843,10 @@ SkitariusOmnissiah.maybe_convert_desire = function(self, current_action, desired
     if not desired_action then
         return desired_action
     end
-    
+
     if string.find(desired_action, "light_until_") then
         return "light_attack"
     end
-
     local weapon_manager = self.weapon_manager
     local armoury = self.armoury
     local engram = self.engram
@@ -863,7 +875,7 @@ SkitariusOmnissiah.maybe_convert_desire = function(self, current_action, desired
     end
 
     if current_action and type(current_action) == "string" and string.find(current_action, "charge") and (not desired_action or string.find(desired_action, "shoot")) then
-        if engram:get_setting("MODE") ~= "charged" then
+        if self.engram:get_setting("MODE") ~= "charged" then
             return desired_action
         end
 
@@ -874,7 +886,7 @@ SkitariusOmnissiah.maybe_convert_desire = function(self, current_action, desired
         end
     end
 
-    if desired_action == "idle" and (engram:get_setting("MODE") == "special_action" or engram:get_setting("MODE") == "special_standard") and string.find(weapon_name, "dual_stubpistols") then
+    if desired_action == "idle" and (self.engram:get_setting("MODE") == "special_action" or self.engram:get_setting("MODE") == "special_standard") and string.find(weapon_name, "dual_stubpistols") then
         return "special_action"
     end
 
@@ -900,7 +912,7 @@ SkitariusOmnissiah.maybe_convert_desire = function(self, current_action, desired
                 desired_action = "special_light_attack"
             end
         end
-        
+
         -- SUPER fucking jank
         if current_action == desired_action then
             self.engram:iterate_engram()
@@ -939,7 +951,7 @@ SkitariusOmnissiah.resolve_conflicts = function(self, input, user, omnissiah, cu
     end
 
     if weapon_manager:weapon_type() == "RANGED" and desired_action == "shoot" then
-        local filter = engram:get_setting("ADS_FILTER")
+        local filter = self.engram:get_setting("ADS_FILTER")
         local aiming = weapon_manager:is_aiming()
         if filter ~= "ads_hip" then
             if (aiming and filter ~= "ads_only") or (not aiming and filter == "ads_only") then
@@ -950,7 +962,7 @@ SkitariusOmnissiah.resolve_conflicts = function(self, input, user, omnissiah, cu
 
 
     if bind_manager:input_value("weapon_reload_hold") and weapon_manager:can_reload() then
-        engram:reset_engram()
+        self.engram:reset_engram()
         return nil
     end
 
@@ -958,18 +970,17 @@ SkitariusOmnissiah.resolve_conflicts = function(self, input, user, omnissiah, cu
         return nil
     end
 
-    if LAST_DIVINATION.action_one_hold and not engram.TEMP then
-        local current_command = engram:current_command()
-        if (current_command == "light_attack" or engram:next_engram_action() == "light_attack")
+    if LAST_DIVINATION.action_one_hold and not self.engram.TEMP then
+        local current_command = self.engram:current_command()
+        if (current_command == "light_attack" or self.engram:next_engram_action() == "light_attack")
            and not string.find(current_command or "", "light_until_") then
             if input == "action_one_hold" then
                 outcome = false
             end
         end
     end
-
     if input == "action_one_hold" and current_action == "light_attack" then
-        local raw_desire = engram:current_command()
+        local raw_desire = self.engram:current_command()
         if raw_desire and string.find(raw_desire, "light_until_") then
             local target_index = tonumber(string.sub(raw_desire, 13))
             local current_index = self:get_current_light_attack_index()
@@ -978,12 +989,11 @@ SkitariusOmnissiah.resolve_conflicts = function(self, input, user, omnissiah, cu
             end
         end
     end
-
-    if input == "action_two_hold" and weapon_manager:weapon_type() == "RANGED" and armoury.force_staff[weapon_name] and weapon_manager:is_charged_ranged() and not engram:current_command() then
+    if input == "action_two_hold" and weapon_manager:weapon_type() == "RANGED" and armoury.force_staff[weapon_name] and weapon_manager:is_charged_ranged() and not self.engram:current_command() then
         outcome = user
     end
 
-    if input == "action_two_hold" and weapon_manager:weapon_type() == "RANGED" and engram:get_setting("MODE") == "charged" and self.engram:current_command() == "idle" then
+    if input == "action_two_hold" and weapon_manager:weapon_type() == "RANGED" and self.engram:get_setting("MODE") == "charged" and self.engram:current_command() == "idle" then
         if (armoury.force_staff[weapon_name] and weapon_manager:current_charge() > 0) or weapon_name == "psyker_chain_lightning" then
             return true
         end
@@ -1003,10 +1013,10 @@ SkitariusOmnissiah.should_skip = function(self, current_action, desired_action)
     local engram = self.engram
     local weapon_name = weapon_manager:weapon_name()
 
-    if engram.TYPE ~= "none" and not engram.TEMP then
+    if self.engram.TYPE ~= "none" and not self.engram.TEMP then
         -- Skip special actions if special is already active and mod is not set to always activate special actions
         if desired_action == "special_action" or desired_action == "special_start_attack" then
-            if weapon_manager:in_cooldown() or (weapon_manager:special_active() and not engram:get_setting("ALWAYS_SPECIAL")) then
+            if weapon_manager:in_cooldown() or (weapon_manager:special_active() and not self.engram:get_setting("ALWAYS_SPECIAL")) then
                 if not (string.find(weapon_name, "powermaul_p2") or string.find(weapon_name, "powersword_p3")) then
                     return true
                 end
@@ -1014,15 +1024,15 @@ SkitariusOmnissiah.should_skip = function(self, current_action, desired_action)
         end
 
         -- Skip invert special actions if special is NOT active and mod is not set to always activate special actions
-        if desired_action == "special_invert" and not (engram:get_setting("ALWAYS_SPECIAL") or weapon_manager:special_active())then
+        if desired_action == "special_invert" and not (self.engram:get_setting("ALWAYS_SPECIAL") or weapon_manager:special_active())then
+            return true
+        end
+        -- If the next action is idle, but the action after leads to a heavy, immediately hold attack input by skipping idle to guarantee proper chaining
+        if current_action == "light_attack" and desired_action == "idle" and self.engram:next_engram_action(1) == "heavy_attack" then
             return true
         end
 
-        if current_action == "light_attack" and desired_action == "idle" and engram:next_engram_action(1) == "heavy_attack" then
-            return true
-        end
-
-        if current_action == "idle" and desired_action == "shoot" and engram:next_engram_action(1) == "special_action" and engram:get_setting("MODE") == "special_standard" then
+        if current_action == "idle" and desired_action == "shoot" and self.engram:next_engram_action(1) == "special_action" and self.engram:get_setting("MODE") == "special_standard" then
             if armoury.combat_shotgun[weapon_name] then
                 return true
             end
@@ -1084,8 +1094,8 @@ SkitariusOmnissiah.pause = function(self)
     local last = 0
 
     local weapon_type = self.weapon_manager:weapon_type()
-    local ADS_rate = engram:get_setting("RATE_OF_FIRE_ADS")
-    local HIP_rate = engram:get_setting("RATE_OF_FIRE_HIP")
+    local ADS_rate = self.engram:get_setting("RATE_OF_FIRE_ADS")
+    local HIP_rate = self.engram:get_setting("RATE_OF_FIRE_HIP")
 
     if weapon_type == "RANGED" and (ADS_rate or HIP_rate) then
         if ADS_rate > 0 and weapon_manager:is_aiming() then

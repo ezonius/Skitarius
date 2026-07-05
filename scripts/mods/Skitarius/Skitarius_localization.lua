@@ -1,7 +1,10 @@
 -- Chinese localization provided by jcyl2023 and SyuanTsai
-
 local Localize = Localize
 
+local function cf(text, color_name)
+    local color = Color[color_name](255, true)
+    return string.format("{#color(%s,%s,%s)}", color[2], color[3], color[4]) .. text .. "{#color(203,203,203)}"
+end
 local localizations = {
     -- Mod Details
     mod_name = {
@@ -277,6 +280,15 @@ local localizations = {
         ["zh-tw"] = "重擊強化層數",
         ["zh-cn"] = "蓄力buff层数",
     },
+    heavy_buff_stacks_tooltip = {
+        en = string.format(
+            "Max Stacks:\n" ..
+            cf(Localize("loc_trait_bespoke_power_bonus_based_on_charge_time") .. " / " .. Localize("loc_weapon_family_crowbar_p1_m1") .. ":","terminal_text_body") .. " 3\n" ..
+            cf(Localize("loc_trait_bespoke_toughness_on_hit_based_on_charge_time") .. ":","terminal_text_body") .. " 3\n" ..
+            cf(Localize("loc_talent_ogryn_fully_charged_attacks_gain_damage_and_stagger") .. ":","terminal_text_body") .. " 4\n" ..
+            cf(Localize("loc_weapon_family_powersword_p3_m1") .. ":","terminal_text_body") .. " 4\n"
+        )
+    },
     heavy_buff_special = {
         en = "Special Required For Heavy Modifier",
         ["zh-tw"] = "重擊修飾需要特殊攻擊",
@@ -411,17 +423,17 @@ local localizations = {
         ["zh-tw"] = "無",
         ["zh-cn"] = "无",
     },
-    light_attack = { en = Localize("loc_weapon_action_title_light") },
-    heavy_attack = { en = Localize("loc_weapon_action_title_heavy") },
+    light_attack = { en = Localize("loc_weapon_action_title_light"), ["zh-tw"] = "輕擊", ["zh-cn"] = "轻攻击" },
+    heavy_attack = { en = Localize("loc_weapon_action_title_heavy"), ["zh-tw"] = "重擊", ["zh-cn"] = "重攻击" },
     light_until_1 = { en = "Light (Until Attack 1)" },
     light_until_2 = { en = "Light (Until Attack 2)" },
     light_until_3 = { en = "Light (Until Attack 3)" },
     light_until_4 = { en = "Light (Until Attack 4)" },
     light_until_5 = { en = "Light (Until Attack 5)" },
-    sprint_heavy_attack = { en = Localize("loc_heavy_attack") .. " (" .. Localize("loc_sprint_slide") .. ")" },
-    special_action = { en = Localize("loc_weapon_action_title_special"), },
-    special_heavy = { en = Localize("loc_weapon_action_title_special") .. " (" .. Localize("loc_heavy_attack") .. ")" },
-    special_invert = { 
+    sprint_heavy_attack = { en = Localize("loc_heavy_attack") .. " (" .. Localize("loc_sprint_slide") .. ")", ["zh-tw"] = "衝刺重擊", ["zh-cn"] = "冲刺重击" },
+    special_action = { en = Localize("loc_weapon_action_title_special"), ["zh-tw"] = "特殊動作", ["zh-cn"] = "特殊动作" },
+    special_heavy = { en = Localize("loc_weapon_action_title_special") .. " (" .. Localize("loc_heavy_attack") .. ")", ["zh-tw"] = "特殊重擊", ["zh-cn"] = "特殊重击" },
+    special_invert = {
         en = Localize("loc_weapon_action_title_special") .. " (Inverted)",
         ["zh-tw"] = Localize("loc_weapon_action_title_special") .. " (反向)",
         ["zh-cn"] = Localize("loc_weapon_action_title_special") .. " (反向)",
