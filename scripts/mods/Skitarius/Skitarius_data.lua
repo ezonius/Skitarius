@@ -672,6 +672,7 @@ return {
                             { text = "special",          value = "special" },
                             { text = "special_charged",  value = "special_charged" },
                             { text = "special_standard", value = "special_standard" },
+                            { text = "sprint_cancel_standard", value = "sprint_cancel_standard" },
                         }
                     },
                     {

@@ -11,8 +11,8 @@ local LAST_SHOT = {
 local PRAY = {
     -- SHARED
     idle = {
-        sprint                = { action_one_hold = false, action_two_hold = false}, --, sprint = true, sprinting = true, hold_to_sprint = true, move_forward = 1 },
-        idle                  = { action_one_hold = false },
+        sprint                = { sprint = true, sprinting = true, move_forward = 1, action_one_hold = false, action_two_hold = false },
+        idle                  = { action_one_hold = false, move_forward = 1 },
         start_attack          = { action_one_pressed = true, action_one_hold = true },
         light_attack          = { action_one_pressed = true, action_one_hold = true },
         heavy_attack          = { action_one_hold = true },
@@ -33,12 +33,12 @@ local PRAY = {
         special_action        = { weapon_extra_pressed = true, weapon_extra_hold = true, action_one_pressed = false, action_one_hold = false },
     },
     sprint = {
-        sprint                = { action_one_hold = false, action_two_hold = false}, --, sprint = true, sprinting = true, hold_to_sprint = true, move_forward = 1 },
-        idle                  = { action_one_hold = false },
-        start_attack          = { action_one_pressed = true, action_one_hold = true },
-        sprint_start_attack   = { action_one_pressed = true, action_one_hold = true}, --, sprint = true, sprinting = true, hold_to_sprint = true, move_forward = 1 },
-        light_attack          = { action_one_pressed = true, action_one_hold = true },
-        heavy_attack          = { action_one_hold = true },
+        sprint                = { sprint = true, sprinting = true, move_forward = 1, action_one_hold = false, action_two_hold = false },
+        idle                  = { action_one_hold = false, move_forward = 1 },
+        start_attack          = { action_one_pressed = true, action_one_hold = true, move_forward = 1 },
+        sprint_start_attack   = { action_one_pressed = true, action_one_hold = true, move_forward = 1}, --, sprint = true, sprinting = true, hold_to_sprint = true, move_forward = 1 },
+        light_attack          = { action_one_pressed = true, action_one_hold = true, move_forward = 1 },
+        heavy_attack          = { action_one_hold = true, move_forward = 1 },
         push                  = { action_two_hold = true },
         push_follow_up        = { action_two_hold = true },
         block                 = { action_two_hold = true },
@@ -204,7 +204,8 @@ local PRAY = {
     },
     -- RANGED
     shoot = {
-        idle                  = { action_one_hold = true },
+        sprint                = { sprint = true, sprinting = true, move_forward = 1, action_one_hold = false, action_two_hold = false },
+        idle                  = { action_one_hold = true, move_forward = 1 },
         shoot                 = { action_one_hold = true, action_one_pressed = true },
         shoot_alt             = { action_one_hold = true, action_one_pressed = true },
         charge                = { action_two_hold = true, action_one_hold = false, action_one_pressed = false },
@@ -217,9 +218,40 @@ local PRAY = {
         quick_wield           = { quick_wield = true },
         weapon_reload         = { weapon_reload_hold = true },
     },
+    shoot_starting = {
+        sprint                = { sprint = true, sprinting = true, move_forward = 1, action_one_hold = false, action_two_hold = false },
+        idle                  = { action_one_hold = true, move_forward = 1 },
+        shoot                 = { action_one_hold = true, action_one_pressed = false },
+        shoot_alt             = { action_one_hold = true, action_one_pressed = false },
+        charge                = { action_two_hold = true, action_one_hold = false, action_one_pressed = false },
+        charge_alt            = { action_one_hold = true },
+        special_start_attack  = { weapon_extra_hold = true },
+        special_light_attack  = { weapon_extra_hold = true },
+        special_heavy_attack  = { weapon_extra_hold = true },
+        special_heavy_execute = { weapon_extra_hold = true },
+        special_action        = { weapon_extra_pressed = true },
+        quick_wield           = { quick_wield = true },
+        weapon_reload         = { weapon_reload_hold = true },
+    },
     shoot_alt = {
-        idle                  = { action_one_hold = false },
+        sprint                = { sprint = true, sprinting = true, move_forward = 1, action_one_hold = false, action_two_hold = false },
+        idle                  = { action_one_hold = false, move_forward = 1 },
         shoot                 = { action_one_hold = true, action_one_pressed = true },
+        shoot_alt             = { action_one_hold = false },
+        charge                = { action_two_hold = true },
+        charge_alt            = { action_one_hold = true },
+        special_start_attack  = { weapon_extra_hold = true },
+        special_light_attack  = { weapon_extra_hold = true },
+        special_heavy_attack  = { weapon_extra_hold = true },
+        special_heavy_execute = { weapon_extra_hold = true },
+        special_action        = { weapon_extra_pressed = true },
+        quick_wield           = { quick_wield = true },
+        weapon_reload         = { weapon_reload_hold = true },
+    },
+    shoot_alt_starting = {
+        sprint                = { sprint = true, sprinting = true, move_forward = 1, action_one_hold = false, action_two_hold = false },
+        idle                  = { action_one_hold = false, move_forward = 1 },
+        shoot                 = { action_one_hold = true, action_one_pressed = false },
         shoot_alt             = { action_one_hold = false },
         charge                = { action_two_hold = true },
         charge_alt            = { action_one_hold = true },
@@ -456,7 +488,13 @@ SkitariusOmnissiah.omnissiah = function(self, queried_input, user_value)
     end
 
     divine_outcome = self:resolve_conflicts(queried_input, user_value, divine_outcome, current_action, desired_action)
+    
+    if queried_input == "move_forward" or queried_input == "move_backward" then
+        divine_outcome = divine_outcome or user_value or 0
+    end
+
     LAST_DIVINATION[queried_input] = divine_outcome
+
     return divine_outcome
 end
 
@@ -552,6 +590,15 @@ SkitariusOmnissiah.get_action = function(self)
             end
         end
     end
+
+    if step_name == "idle" and self.weapon_manager:is_sprinting() then
+        return "sprint"
+    end
+
+    if step_name == "sprint" then
+        return "sprint"
+    end
+
     return step_name
 end
 
@@ -717,9 +764,24 @@ SkitariusOmnissiah.maybe_convert_action = function(self, player_unit, running_ac
             return "shoot"
         end
 
-        if current_action_t > 0.05 then
-            return "idle"
+        local num_shots_fired = 0
+        local data_extension = player_unit and ScriptUnit.has_extension(player_unit, "unit_data_system")
+        if data_extension then
+            local kind = action_settings.kind
+            local component_name = kind == "shoot_pellets" and "action_shoot_pellets" or "action_shoot"
+            local field_name = kind == "shoot_pellets" and "num_pellets_fired" or "num_shots_fired"
+            local component = data_extension:read_component(component_name)
+            local config = component and rawget(component, "__config")
+            if config and config[field_name] then
+                num_shots_fired = component[field_name]
+            end
         end
+
+        local delay = 0.04
+        if (num_shots_fired > 0 and current_action_t > delay) or current_action_t > 0.4 then
+            return action_name
+        end
+        return action_name .. "_starting"
     end
 
     if action_name == "special_action" then

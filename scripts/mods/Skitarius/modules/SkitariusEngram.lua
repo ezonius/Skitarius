@@ -52,6 +52,7 @@ local SUB_SEQUENCE = {
     wield = { "quick_wield" },
     -- RANGED
     standard = { "shoot", "idle" },
+    sprint_cancel_standard = { "shoot", "sprint", "idle" },
     charged = { "charge", "shoot", "idle" },
     special_attack = { "special_start_attack", "special_light_attack", "idle" },
     special_attack_charged = { "special_start_attack", "special_heavy_execute", "idle" },

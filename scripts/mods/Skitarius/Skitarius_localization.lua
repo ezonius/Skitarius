@@ -504,6 +504,11 @@ local localizations = {
         ["zh-cn"] = "特殊（蓄力）",
         ["zh-tw"] = "特殊（蓄力）",
     },
+    sprint_cancel_standard = {
+        en = "Sprint-Cancel Standard",
+        ["zh-tw"] = "衝刺取消標準射擊",
+        ["zh-cn"] = "冲刺取消标准射击",
+    },
     auto_charge_threshold = {
         en = "Weapon Charge Threshold %%",
         ["zh-tw"] = "蓄力閾值 %%",
