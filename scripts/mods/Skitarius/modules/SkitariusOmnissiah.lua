@@ -490,6 +490,13 @@ SkitariusOmnissiah.omnissiah = function(self, queried_input, user_value)
 
     divine_outcome = self:resolve_conflicts(queried_input, user_value, divine_outcome, current_action, desired_action)
 
+    if (queried_input == "move_forward" or queried_input == "move_backward") and divine_outcome == 1 then
+        local resolved_mode = self.engram:get_setting("MODE")
+        if resolved_mode ~= "sprint_cancel_standard" and self.engram:get_setting("TYPE") ~= "MELEE" then
+            divine_outcome = nil
+        end
+    end
+
     if queried_input == "move_forward" or queried_input == "move_backward" then
         divine_outcome = divine_outcome or user_value or 0
     end
