@@ -789,8 +789,9 @@ SkitariusOmnissiah.maybe_convert_action = function(self, player_unit, running_ac
             end
         end
 
-        local delay = 0.04
-        if (num_shots_fired > 0 and current_action_t > delay) or current_action_t > 0.4 then
+        local shot_complete = (num_shots_fired > 0 and current_action_t > 0.04)
+        local mode = self.engram:get_setting("MODE")
+        if shot_complete or ((mode == "standard" or mode == "charged") and current_action_t > 0.01) or current_action_t > 0.4 then
             return action_name
         end
         return action_name .. "_starting"
@@ -1034,12 +1035,18 @@ SkitariusOmnissiah.should_skip = function(self, current_action, desired_action)
         if desired_action == "special_invert" and not (self.engram:get_setting("ALWAYS_SPECIAL") or weapon_manager:special_active())then
             return true
         end
-        -- If the next action is idle, but the action after leads to a heavy, immediately hold attack input by skipping idle to guarantee proper chaining
-        if current_action == "light_attack" and desired_action == "idle" and self.engram:next_engram_action(1) == "heavy_attack" then
+        if current_action == "light_attack" and desired_action == "idle" and engram:next_engram_action(1) == "heavy_attack" then
             return true
         end
 
-        if current_action == "idle" and desired_action == "shoot" and self.engram:next_engram_action(1) == "special_action" and self.engram:get_setting("MODE") == "special_standard" then
+        if (current_action == "shoot" or current_action == "shoot_alt") and desired_action == "idle" then
+            local mode = self.engram:get_setting("MODE")
+            if mode == "standard" or mode == "charged" then
+                return true
+            end
+        end
+
+        if current_action == "idle" and desired_action == "shoot" and engram:next_engram_action(1) == "special_action" and engram:get_setting("MODE") == "special_standard" then
             if armoury.combat_shotgun[weapon_name] then
                 return true
             end
@@ -1124,6 +1131,10 @@ SkitariusOmnissiah.pause = function(self)
 
     local t = Managers.time:time("gameplay")
     if t - last < delay then
+        local mode = self.engram:get_setting("MODE")
+        if mode == "standard" or mode == "charged" then
+            return false
+        end
         return true
     end
 
