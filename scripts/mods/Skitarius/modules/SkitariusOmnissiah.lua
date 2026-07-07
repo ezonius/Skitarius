@@ -789,9 +789,19 @@ SkitariusOmnissiah.maybe_convert_action = function(self, player_unit, running_ac
             end
         end
 
-        local shot_complete = (num_shots_fired > 0 and current_action_t > 0.04)
+        local shot_complete = (num_shots_fired > 0 and current_action_t > 0.04) or (action_settings.fire_time and current_action_t > action_settings.fire_time)
+        if shot_complete then
+            return action_name
+        end
         local mode = self.engram:get_setting("MODE")
-        if shot_complete or ((mode == "standard" or mode == "charged") and current_action_t > 0.01) or current_action_t > 0.4 then
+        if mode == "sprint_cancel_standard" then
+            local is_p2_staff = weapon_name == "forcestaff_p2_m1"
+            local threshold = is_p2_staff and 0.2 or 0.07
+            if current_action_t > threshold then
+                return action_name
+            end
+        end
+        if ((mode == "standard" or mode == "charged") and current_action_t > 0.01) or current_action_t > 0.4 then
             return action_name
         end
         return action_name .. "_starting"
