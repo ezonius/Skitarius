@@ -151,6 +151,11 @@ SkitariusWeaponManager.refresh_weapon = function(self)
                 wielded_slot = "RANGED"
             end
             -- Method 2: Inventory system as failsafe
+        elseif wielded_slot and wielded_slot == "slot_unarmed" then
+            -- "Unarmed" / empty-hands state: not a real weapon, so report a distinct state
+            -- so the engram origin/iteration logic can detect the swap.
+            self.name = "unarmed"
+            wielded_slot = "UNARMED"
         elseif not wielded_slot then
             local manager = Managers.player
             local local_player = manager and manager:local_player_safe(1)

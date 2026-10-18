@@ -1,5 +1,7 @@
 SkitariusOmnissiah = class("SkitariusOmnissiah")
 
+local PlayerUnitVisualLoadout = require("scripts/extension_systems/visual_loadout/utilities/player_unit_visual_loadout")
+
 local LAST_SHOT = {
     ADS = 0,
     ADS_ID = 0,
@@ -371,9 +373,9 @@ local INTERRUPTING_ACTIONS = {
 
 local SWAP = {
     OCCURRED = false,
-    LIMITER = true,
+    LIMITER = false,
     SNAPSHOT = 0,
-    COOLDOWN = 0.2
+    COOLDOWN = 0
 }
 
 SkitariusOmnissiah.get_current_light_attack_index = function(self)
@@ -404,6 +406,49 @@ end
 
 SkitariusOmnissiah.set_bind_manager = function(self, bind_manager)
     self.bind_manager = bind_manager
+end
+
+-- Performs the "Swap Weapon (Unarmed)" step directly. The game has no input bound to slot_unarmed
+-- (it lacks wield_inputs and isn't in quick_wield_configuration), so unlike a normal swap we can't
+-- rely on passing quick_wield through to the engine. Instead we call the same utility the engine's
+-- own character states use (e.g. player_character_state_knocked_down). This mirrors how the game
+-- itself wields/unwields slot_unarmed, and reuses the standard server-authoritative RPC path.
+SkitariusOmnissiah.perform_unarmed_swap = function(self)
+    local player_manager = Managers and Managers.player
+    local player = player_manager and player_manager:local_player_safe(1)
+    local player_unit = player and player.player_unit
+    if not player_unit then
+        return
+    end
+    local unit_data_extension = ScriptUnit.has_extension(player_unit, "unit_data_system")
+    local inventory_component = unit_data_extension and unit_data_extension:read_component("inventory")
+    if not inventory_component then
+        return
+    end
+    local t = Managers.time:time("gameplay")
+    local wielded_slot = inventory_component.wielded_slot
+    local current_command = self.engram:current_command()
+    local wielded = false
+
+    if current_command == "wield_unarmed" then
+        -- First half: swap into the unarmed (hands/empty) slot, unless something already did.
+        if wielded_slot ~= "slot_unarmed" then
+            PlayerUnitVisualLoadout.wield_slot("slot_unarmed", player_unit, t)
+            wielded = true
+        end
+    elseif current_command == "wield_previous" then
+        -- Second half: swap back to whatever we had before the unarmed step.
+        if wielded_slot == "slot_unarmed" then
+            PlayerUnitVisualLoadout.wield_previous_slot(inventory_component, player_unit, t)
+            wielded = true
+        end
+    end
+
+    -- If the desired state is already the case (e.g. a character state forced us in/out of unarmed),
+    -- the on_slot_wielded hook won't fire, so iterate the engram forward here to avoid stalling.
+    if not wielded then
+        self.engram:iterate_engram()
+    end
 end
 
 --  ╔═╗╔═╗╔╦╗╦╔═╗╔╗╔  ╦ ╦╔═╗╔╗╔╔╦╗╦  ╔═╗╦═╗
@@ -454,6 +499,15 @@ SkitariusOmnissiah.omnissiah = function(self, queried_input, user_value)
         else
             should_iterate = false
         end
+    end
+
+    -- "Swap Weapon (Unarmed)" step: there is no engine input for slot_unarmed, so the swap is
+    -- performed directly via PlayerUnitVisualLoadout instead of being driven through PRAY/inputs.
+    -- The on_slot_wielded hook in Skitarius.lua will refresh the weapon state and iterate the
+    -- engram once the swap completes (just like a normal wield step).
+    if desired_action == "wield_unarmed" or desired_action == "wield_previous" then
+        self:perform_unarmed_swap()
+        return user_value
     end
 
     if should_iterate then

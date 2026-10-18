@@ -442,6 +442,7 @@ local localizations = {
     push = { en = Localize("loc_pushing"), },
     push_attack = { en = Localize("loc_push_follow_up"), },
     wield = { en = Localize("loc_ingame_quick_wield"), },
+    wield_unarmed = { en = "Swap Weapon (Unarmed)", },
 
     -- Reset
     reset_weapon_melee = {

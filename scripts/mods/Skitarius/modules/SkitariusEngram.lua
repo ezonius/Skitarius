@@ -50,6 +50,7 @@ local SUB_SEQUENCE = {
     push = { "block", "push", "idle" },
     push_attack = { "block", "push", "push_follow_up" },
     wield = { "quick_wield" },
+    wield_unarmed = { "wield_unarmed", "wield_previous" },
     -- RANGED
     standard = { "shoot", "idle" },
     sprint_cancel_standard = { "shoot", "sprint", "idle" },
@@ -150,7 +151,8 @@ SkitariusEngram.new_engram = function(self, bind_name_or_temp_data, temp_or_nil)
         local all_wield = true
 
         for i = 1, #command_queue do
-            if command_queue[i] ~= "wield" then
+            local command = command_queue[i]
+            if command ~= "wield" and command ~= "wield_unarmed" then
                 all_wield = false
                 break
             end

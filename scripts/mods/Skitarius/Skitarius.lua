@@ -231,8 +231,13 @@ mod:hook_safe(CLASS.PlayerUnitWeaponExtension, "on_slot_wielded", function(self,
         end
     else
         mod.weapon_manager:refresh_weapon()
+        -- "Swap Weapon (Unarmed)" step: the swap to unarmed doesn't return to ORIGIN, so iterate
+        -- forward to the wield_previous step instead of waiting for ORIGIN to match.
+        if current_command == "wield_unarmed" then
+            mod.omnissiah:set_swap(true)
+            mod.engram:iterate_engram()
         -- Only iterate wield actions if the engram has returned to its starting weapon
-        if mod.engram.ORIGIN == mod.weapon_manager:weapon_name() then
+        elseif mod.engram.ORIGIN == mod.weapon_manager:weapon_name() then
             mod.omnissiah:set_swap(true)
             mod.engram:iterate_engram()
         end

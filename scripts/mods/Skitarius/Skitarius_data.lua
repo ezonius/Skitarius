@@ -250,6 +250,7 @@ local melee_sequence_options = {
     { text = "push",                value = "push" },
     { text = "push_attack",         value = "push_attack" },
     { text = "wield",               value = "wield" },
+    { text = "wield_unarmed",        value = "wield_unarmed" },
     --{ text = "sprint_heavy_attack", value = "sprint_heavy_attack" },
 }
 
